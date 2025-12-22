@@ -1,3 +1,4 @@
+import csv
 import cv2
 import torch
 import numpy as np
@@ -7,10 +8,11 @@ import time
 from ultralytics import YOLO
 
 # BIẾN TOÀN CỤC
-FRAME_WIDTH=30        # Đang cho là đoạn đường dài 100m và rộng 30m
-FRAME_HEIGHT=100
-MAX_SPEED_REF = 250.0  # 60
+FRAME_WIDTH= 10 #12        # 30, Đang cho là đoạn đường dài 100m và rộng 30m
+FRAME_HEIGHT= 10 #12      # 100
+MAX_SPEED_REF = 30.0 #40.0  # 60, # 250 - highway
 #MAX_DENSITY_REF = 10.0
+
     
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -18,9 +20,10 @@ def parse_args():
         "--video",
         type=str,
         nargs="?",
-        default="content/highway.mp4",
+        #default="content/highway.mp4",    # highway
         #default="content/Vid1.mp4",
-        #default="content/Video_1.mp4",
+        default="content/IMG_4543.MOV",
+        
         help="Path to input video"
     )
     parser.add_argument(
@@ -126,25 +129,38 @@ def count_motorcycle_car_simple(tracks):
 
 
 def main(_argv):
-    
-    SOURCE_POLYGONE = np.array([[18, 550], # góc dưới trái
+    csv_file = open("CI_output.csv", mode="w", newline="")   # mở file csv để ghi chỉ số tắc nghẽn giao thông
+    csv_writer = csv.writer(csv_file)
+
+    # header
+    csv_writer.writerow(["frame_id", "CI"])                  # ghi tiêu đề cột vào file csv
+
+    # video highway
+    """SOURCE_POLYGONE = np.array([[18, 550], # góc dưới trái
                                  [1852, 608], # góc dưới phải
                                  [1335, 370], # góc trên phải
                                  [534, 343]], # góc trên trái
                                 dtype=np.float32)
-    
+    """
     """SOURCE_POLYGONE = np.array([[523, 607], # góc dưới trái
                                  [1168, 971], # góc dưới phải
                                  [1628, 482], # góc trên phải
                                  [1004, 302]], # góc trên trái
                                 dtype=np.float32)
     """
-    """SOURCE_POLYGONE = np.array([[716, 826], # góc dưới trái, lấy làn bên trái
-                                 [1407, 826], # góc dưới phải
-                                 [1364, 427], # góc trên phải
-                                 [734, 428]], # góc trên trái
+    SOURCE_POLYGONE = np.array([[497, 771], # góc dưới trái, lấy làn bên trái
+                                 [1385, 806], # góc dưới phải
+                                 [1408, 207], # góc trên phải
+                                 [690, 169]], # góc trên trái
                                 dtype=np.float32)
-    """
+    
+
+    # video_2
+    """SOURCE_POLYGONE = np.array([[556, 790], # góc dưới trái, lấy làn bên trái
+                                 [1028, 792], # góc dưới phải
+                                 [1037, 409], # góc trên phải
+                                 [590, 417]], # góc trên trái
+                                dtype=np.float32)"""
     BIRD_EYE_VIEW = np.array([[0, 0], [FRAME_WIDTH, 0], [FRAME_WIDTH, FRAME_HEIGHT],[0, FRAME_HEIGHT]], dtype=np.float32)
 
     M = cv2.getPerspectiveTransform(SOURCE_POLYGONE, BIRD_EYE_VIEW)
@@ -256,6 +272,7 @@ def main(_argv):
             density = (moto_count * 3.0 + car_count * 18.0) / (FRAME_WIDTH * FRAME_HEIGHT)  # mật độ giao thông, xe máy tính 3 đơn vị, ô tô tính 18 đơn vị
             CI = 0.5 * density + 0.5 * (1 - avg_speed_all / MAX_SPEED_REF)   # chỉ số tắc nghẽn giao thông
             CI = max(0, min(1, CI))   # giới hạn CI trong khoảng 0-1
+            csv_writer.writerow([frame_count, CI]) # ghi CI vào file csv
             if CI < 0.3: 
             #level = 0
                 level, label = 0, "Thong thoang" # Thông thoáng, 0
@@ -307,6 +324,7 @@ def main(_argv):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    csv_file.close()   # đóng file csv
     cap.release()
     writer.release()
     cv2.destroyAllWindows()
