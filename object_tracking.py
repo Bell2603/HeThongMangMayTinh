@@ -109,10 +109,11 @@ def average_speed_all_vehicles_fair(speed_accumulator):
 
     return sum(vehicle_avgs) / len(vehicle_avgs)
 
-def count_motorcycle_car_simple(tracks):
+def count_motorcycle_car_person(tracks):
     
     motorcycle_count = 0
     car_count = 0
+    person_count = 0
     
     for track in tracks:
         if not track.is_confirmed():
@@ -120,12 +121,14 @@ def count_motorcycle_car_simple(tracks):
         
         class_id = track.get_det_class()
         
-        if class_id == 3:  # Xe máy
+        if class_id == 3:      # motorcycle
             motorcycle_count += 1
-        elif class_id == 2:  # Ô tô
+        elif class_id == 2:    # car
             car_count += 1
+        elif class_id == 0:    # person
+            person_count += 1
     
-    return motorcycle_count, car_count
+    return motorcycle_count, car_count, person_count
 
 
 def main(_argv):
@@ -266,10 +269,10 @@ def main(_argv):
 
 
             # vận tốc trung bình
-            moto_count, car_count = count_motorcycle_car_simple(tracks)
+            moto_count, car_count, person_count = count_motorcycle_car_person(tracks)
             avg_speed_all = average_speed_all_vehicles_fair(speed_accumulator) # tính vận tốc trung bình của tất cả các xe
             # density = len(speed_accumulator) / MAX_DENSITY_REF  # mật độ giao thông
-            density = (moto_count * 3.0 + car_count * 18.0) / (FRAME_WIDTH * FRAME_HEIGHT)  # mật độ giao thông, xe máy tính 3 đơn vị, ô tô tính 18 đơn vị
+            density = (moto_count * 3.0 + car_count * 18.0 + person_count * 0.75) / (FRAME_WIDTH * FRAME_HEIGHT)  # mật độ giao thông, xe máy tính 3 đơn vị, ô tô tính 18 đơn vị
             CI = 0.5 * density + 0.5 * (1 - avg_speed_all / MAX_SPEED_REF)   # chỉ số tắc nghẽn giao thông
             CI = max(0, min(1, CI))   # giới hạn CI trong khoảng 0-1
             csv_writer.writerow([frame_count, CI]) # ghi CI vào file csv
