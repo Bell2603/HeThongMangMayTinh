@@ -8,9 +8,9 @@ import time
 from ultralytics import YOLO
 
 # BIẾN TOÀN CỤC
-FRAME_WIDTH= 10 #12        # 30, Đang cho là đoạn đường dài 100m và rộng 30m
-FRAME_HEIGHT= 10 #12      # 100
-MAX_SPEED_REF = 30.0 #40.0  # 60, # 250 - highway
+FRAME_WIDTH= 6 # bốt #12        # 30, Đang cho là đoạn đường dài 100m và rộng 30m
+FRAME_HEIGHT= 14 # bốt #12       # 100
+MAX_SPEED_REF = 40.0  #40.0  # 60 - trong khu vực dân cư, # 250 - highway
 #MAX_DENSITY_REF = 10.0
 
     
@@ -22,8 +22,11 @@ def parse_args():
         nargs="?",
         #default="content/highway.mp4",    # highway
         #default="content/Vid1.mp4",
-        default="content/IMG_4543.MOV",
-        
+        #default="content/IMG_4543.MOV",    # bốt
+        #default="content/Tac.mp4",
+        #default="content/Chiều 23_11.mp4",
+        #default="content/IMG_4562.MOV",   # thông thoáng
+        default="content/IMG_4575.MOV",    # Tắc
         help="Path to input video"
     )
     parser.add_argument(
@@ -145,19 +148,40 @@ def main(_argv):
                                  [534, 343]], # góc trên trái
                                 dtype=np.float32)
     """
-    """SOURCE_POLYGONE = np.array([[523, 607], # góc dưới trái
-                                 [1168, 971], # góc dưới phải
-                                 [1628, 482], # góc trên phải
-                                 [1004, 302]], # góc trên trái
-                                dtype=np.float32)
-    """
-    SOURCE_POLYGONE = np.array([[497, 771], # góc dưới trái, lấy làn bên trái
-                                 [1385, 806], # góc dưới phải
-                                 [1408, 207], # góc trên phải
-                                 [690, 169]], # góc trên trái
-                                dtype=np.float32)
+    # Chiều 23_11.mp4
+    """SOURCE_POLYGONE = np.array([[1438, 1789], # góc dưới trái
+                                 [3027, 2022], # góc dưới phải
+                                 [3180, 1093], # góc trên phải
+                                 [2290, 983]], # góc trên trái
+                                dtype=np.float32)"""
     
-
+    # IMG_4543.MOV
+    """SOURCE_POLYGONE = np.array([[510, 641], # góc dưới trái, lấy làn bên trái
+                                 [1345, 692], # góc dưới phải
+                                 [1428, 263], # góc trên phải
+                                 [977, 231]], # góc trên trái
+                                dtype=np.float32)"""
+    
+    # IMG_4562.MOV - thông thoáng
+    """SOURCE_POLYGONE = np.array([[525, 813], # góc dưới trái, lấy làn bên trái
+                                 [1294, 850], # góc dưới phải
+                                 [1350, 494], # góc trên phải
+                                 [945, 500]], # góc trên trái
+                                dtype=np.float32)"""
+    
+    # IMG_4575.MOV - Tắc
+    SOURCE_POLYGONE = np.array([[464, 735], # góc dưới trái, lấy làn bên trái
+                                 [1295, 770], # góc dưới phải
+                                 [1339, 446], # góc trên phải
+                                 [973, 442]], # góc trên trái
+                                dtype=np.float32)
+    # Tac.mp4
+    """SOURCE_POLYGONE = np.array([[460, 770], # góc dưới trái, lấy làn bên trái
+                                 [1097, 779], # góc dưới phải
+                                 [1100, 385], # góc trên phải
+                                 [461, 402]], # góc trên trái
+                                dtype=np.float32)"""
+    
     # video_2
     """SOURCE_POLYGONE = np.array([[556, 790], # góc dưới trái, lấy làn bên trái
                                  [1028, 792], # góc dưới phải
@@ -273,7 +297,7 @@ def main(_argv):
             avg_speed_all = average_speed_all_vehicles_fair(speed_accumulator) # tính vận tốc trung bình của tất cả các xe
             # density = len(speed_accumulator) / MAX_DENSITY_REF  # mật độ giao thông
             density = (moto_count * 3.0 + car_count * 18.0 + person_count * 0.75) / (FRAME_WIDTH * FRAME_HEIGHT)  # mật độ giao thông, xe máy tính 3 đơn vị, ô tô tính 18 đơn vị
-            CI = 0.5 * density + 0.5 * (1 - avg_speed_all / MAX_SPEED_REF)   # chỉ số tắc nghẽn giao thông
+            CI = 0.3 * density + 0.7 * (1 - avg_speed_all / MAX_SPEED_REF)   # chỉ số tắc nghẽn giao thông
             CI = max(0, min(1, CI))   # giới hạn CI trong khoảng 0-1
             csv_writer.writerow([frame_count, CI]) # ghi CI vào file csv
             if CI < 0.3: 
@@ -284,7 +308,7 @@ def main(_argv):
                 level, label = 1, "Dong" # Đông, 1
             else:
                 #level = 2
-                level, label = 2, "Tac nghen" #Tắc nghẽn, 2
+                level, label = 2, "Tac nghen" # Tắc nghẽn, 2
             # Vẽ hình chữ nhật màu đen đè lên vùng text cũ
             cv2.rectangle(frame, (25, 15), (700, 150), (0, 0, 0), -1)  # vẽ hộp đen để làm nền cho văn bản
             cv2.putText(
